@@ -1,6 +1,6 @@
-; General
+; general
 
-; Name and file
+; name and file
   Name "AMPP"
   OutFile "ampp.exe"
   Caption "AMPP"
@@ -8,7 +8,7 @@
   ;UninstallIcon "icon\un-icon.ico"
   BrandingText "AMPP"
 
-; The default installation directory
+; the default installation directory
   InstallDir "$PROGRAMFILES\AMPP\"
 
   CRCCheck on
@@ -16,10 +16,10 @@
   
   SetCompress off
 
-; Request application privileges for Windows Vista and Windows 7
+; request application privileges for Windows Vista and Windows 7
   RequestExecutionLevel admin
 
-; Includes
+; includes
 
   !include "Registry.nsh" ; rejestr
   !include "FileFunc.nsh"
@@ -27,6 +27,7 @@
   !include "Sections.nsh" ; opcje sekcji
   !include "logiclib.nsh" ; operatory logiczne
   !include "nsProcess.nsh" ; sprawdzanie procesu
+  !include nsDialogs.nsh
   !include "EnumUsersReg.nsh" ; reg hive
   !include "x64.nsh" ; wersje x64
   !include "StrFunc.nsh"
@@ -36,30 +37,37 @@
   !include "StrRep.nsh" ; string replace
   !include "OpenLinkNewWindow.nsh" ; opens link in default wrobser
 
-; Interface Settings
-   
+; interface settings
     
 ;--------------------------------
-; Pages
+; pages
   
   page license
   page components
   page directory
+  
+  page custom apache2_config_adv_one
+  page custom mysql_config_spl_one
+  page custom mysql_config_adv_one
+  page custom mysql_config_adv_two
+  
   page instfiles
   uninstpage uninstConfirm
   uninstpage instfiles
- 
-  page custom apache2-page-one  
-  page custom mysql-page-one
-  page custom mysql-page-two
-  page custom mysql-page-three
-  page custom ps-portal-summary
   
 ; Languages
  
 ;--------------------------------
-;Variables
+; variables
 
+  ; global
+  var dialog
+  
+  var text0
+  var text1
+  var text2
+  var temp1
+  
   var RegVer
   
   ; mysql variables
@@ -80,9 +88,9 @@
   var apache_admin_email
 
 ;--------------------------------
-;Installer Sections
+; installer Sections
 
-  Function LicenseShow ; przewijanie licencji
+  Function LicenseShow
     ScrollLicense::Set /NOUNLOAD
   FunctionEnd
   
@@ -122,7 +130,7 @@
     SetOutPath "$TEMP\portal\"
     File "inst-files\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi"
     DetailPrint "Instaluj apache HTTP Server..."
-    ExecCmd::exec 'msiexec /i "$TEMP\portal\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi" /qb! INSTALLDIR="$INSTDIR\apache2" SERVERNAME=$apache_server_name SERVERADMIN="admin@$ServName" ALLUSERS=1 RebootYesNo=No /L*V "$INSTDIR\Log\apach2.log"'
+    ;ExecCmd::exec 'msiexec /i "$TEMP\portal\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi" /qb! INSTALLDIR="$INSTDIR\apache2" SERVERNAME=$apache_server_name SERVERADMIN="admin@$ServName" ALLUSERS=1 RebootYesNo=No /L*V "$INSTDIR\Log\apach2.log"'
     
     DetailPrint "Konfiguruj apache HTTP Server..."
     ${textreplace::ReplaceInFile} "$INSTDIR\apache2\conf\httpd.conf" "$INSTDIR\apache2\conf\httpd.conf" "htdocs" "www-root" "/S=1 /C=1 /AO=1" $0
@@ -134,7 +142,7 @@
   
   Function php_install
     SetOutPath "$TEMP\portal\"
-    File "inst-files\php-5.3.28-Win32-VC9-x86.msi"
+    ;File "inst-files\php-5.3.28-Win32-VC9-x86.msi"
     DetailPrint "Instaluj php..."
     ExecCmd::exec 'msiexec /i "$TEMP\portal\php-5.3.28-Win32-VC9-x86.msi" /qb! INSTALLDIR="$INSTDIR\php" apacheDIR="$INSTDIR\apache2\conf" ADDLOCAL="ScriptExecutable,cgi,apache22,ext_php_mysqli,ext_php_mysql,ext_php_mbstring" /L*V "$INSTDIR\Log\php.log"'
   FunctionEnd
@@ -147,7 +155,7 @@
   Function phpmyadmin_install
     CreateDirectory "$INSTDIR\apache2\www-root\"
     SetOutPath "$TEMP\portal\"
-    File "inst-files\phpMyAdmin-4.0.9-english.zip"
+    ;File "inst-files\phpMyAdmin-4.0.9-english.zip"
     DetailPrint "Instaluj phpMyAdmin..."
     !insertmacro ZIPDLL_EXTRACT "$TEMP\portal\phpMyAdmin-4.0.9-english.zip" "$INSTDIR\apache2\www-root" "<ALL>"
   FunctionEnd
@@ -163,7 +171,7 @@
     
     
     SetOutPath "$TEMP\portal\"
-    File "inst-files\mysql-5.6.15-win32.zip"
+    ;File "inst-files\mysql-5.6.15-win32.zip"
     DetailPrint "Instaluj MySQL Server..."
     !insertmacro ZIPDLL_EXTRACT "$TEMP\portal\mysql-5.6.15-win32.zip" "$INSTDIR\MySQL" "<ALL>"
     
@@ -200,7 +208,7 @@
     ReadRegStr $0 HKLM "SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" 'TargetVersion'
     ${If} $0 != "4.0.0"
       SetOutPath "$TEMP\portal\"
-      File "inst-files\dotNetFx40_Full_x86_x64.exe"
+      ;File "inst-files\dotNetFx40_Full_x86_x64.exe"
       DetailPrint "Instaluj .NET Framework v.4.0..."
       ExecCmd::exec '"$TEMP\portal\dotNetFx40_Full_x86_x64.exe" /passive /norestart'
     ${EndIf}
@@ -242,171 +250,66 @@
     SetShellVarContext all
 
     CreateDirectory "$INSTDIR\Log"    
-    call apache_install
-    call php_install
-    call phpmyadmin_install
-    call create_www
-    call dotnet_install
-    call mysql_install
+    ;call apache_install
+    ;call php_install
+    ;call phpmyadmin_install
+    ;call create_www
+    ;call dotnet_install
+    ;call mysql_install
 
-    WriteUninstaller "$INSTDIR\un-ampp.exe"      
+    ;WriteUninstaller "$INSTDIR\un-ampp.exe"      
   SectionEnd
 
-/** CUSTOM PAGES BEGiN **/
-
-  Function apache2-page-one
+  Function apache2_config_adv_one
     ${If} ${SectionIsSelected} ${section_two}
-      ;ReserveFile "ps_portal-apache_page-1.ini"
-      ;!insertmacro MUI_HEADER_TEXT "Informacje" "W wyniku tej instalacji zostanie zainstalowany system PS PORTAL."
-      ;!insertmacro MUI_INSTALLOPTIONS_EXTRACT "ps_portal-apache_page-1.ini"
-      ;!insertmacro MUI_INSTALLOPTIONS_DISPLAY "ps_portal-apache_page-1.ini"
+      nsDialogs::Create /NOUNLOAD 1018
+      pop $dialog
       
-      ;!insertmacro MUI_INSTALLOPTIONS_READ $R0 "ps_portal-apache_page-1.ini" "Field 3" "State"
-      ;!insertmacro MUI_INSTALLOPTIONS_READ $R1 "ps_portal-apache_page-1.ini" "Field 5" "State"
-      ;!insertmacro MUI_INSTALLOPTIONS_READ $R2 "ps_portal-apache_page-1.ini" "Field 7" "State"
+      ${If} $dialog == error
+        abort
+      ${EndIf}
       
-      ;!insertmacro MUI_INSTALLOPTIONS_READ $R3 "ps_portal-apache_page-1.ini" "Field 8" "State"
-      ;!insertmacro MUI_INSTALLOPTIONS_READ $R4 "ps_portal-apache_page-1.ini" "Field 9" "State"      
+      ${NSD_CreateLabel} 0 0 200 20 "Apache2 settings."
+      
+      ${NSD_CreateLabel} 0 30 200 20 "Domain name:"
 
-      StrCpy $apache_domain $R0
-      StrCpy $apache_server_name $R1
-      StrCpy $apache_admin_email $R2
-      
-      StrCmp $R0 "" mustcomplete
-      StrCmp $R1 "" mustcomplete
-      StrCmp $R2 "" mustcomplete
-      
-      ${If} $R3 == 0
-        ${If} $R4 == 0
-          MessageBox MB_OK|MB_ICONEXCLAMATION "Aby kontynuowaæ instalacjê wybierz port us³ugi apache2!"
-          call apache2-page-one
-        ${EndIf}
-      ${EndIf}
-      
-      ${If} $R3 == 1
-        StrCpy $apache_port "80"
-      ${EndIf}
-      
-      ${If} $R4 == 1
-        StrCpy $apache_port "8080"
-      ${EndIf}
-      
-      Goto exit
+      ${NSD_CreateText} 0 50 200 20 ""
+      pop $text0
+        
+     ${NSD_CreateLabel} 0 80 200 20 "Server name:"
 
-      mustcomplete:
-        MessageBox MB_OK|MB_ICONEXCLAMATION "Aby kontynuowaæ instalacjê nale¿y uzupe³niæ wszystkie pola!"
-        call apache2-page-one   
-      exit:
-        Pop $R0
-    ${EndIf}
-  FunctionEnd
-
-  Function mysql-page-one
-    ${If} ${SectionIsSelected} ${section_two}
-      ;ReserveFile "ps_portal-mysql_page-1.ini"
-      ;!insertmacro MUI_HEADER_TEXT "Informacje" "W wyniku tej instalacji zostanie zainstalowany system PS PORTAL."
-      ;!insertmacro MUI_INSTALLOPTIONS_EXTRACT "ps_portal-mysql_page-1.ini"
-      ;!insertmacro MUI_INSTALLOPTIONS_DISPLAY "ps_portal-mysql_page-1.ini"
-      
-      ;!insertmacro MUI_INSTALLOPTIONS_READ $R0 "ps_portal-mysql_page-1.ini" "Field 1" "State"
-      ;!insertmacro MUI_INSTALLOPTIONS_READ $R1 "ps_portal-mysql_page-1.ini" "Field 2" "State"
-      ;!insertmacro MUI_INSTALLOPTIONS_READ $R2 "ps_portal-mysql_page-1.ini" "Field 3" "State"     
-      ;!insertmacro MUI_INSTALLOPTIONS_READ $R3 "ps_portal-mysql_page-1.ini" "Field 4" "State"
-      
-      StrCmp $R0 "" mustcomplete
-      StrCmp $R1 "" mustcomplete
-      StrCmp $R2 "" mustcomplete
-      StrCmp $R3 "" mustcomplete
-       
-      ${If} $R2 != $R3
-        Goto incorrect_passwd
-      ${EndIf}
-
-      StrCpy $mysql_service_name $R0
-      StrCpy $mysql_port $R1
-      StrCpy $mysql_passwd $R3
-      
-      Goto exit
-      
-      incorrect_passwd:
-        MessageBox MB_OK|MB_ICONEXCLAMATION "Podane has³a ró¿ni¹ siê od siebie! Spróbuj ponownie!"
-        call mysql-page-one      
-      mustcomplete:
-        MessageBox MB_OK|MB_ICONEXCLAMATION "Aby kontynuowaæ instalacjê nale¿y uzupe³niæ wszystkie pola!"
-        call mysql-page-one   
-      exit:
-        Pop $R0      
-    ${EndIf}
-  FunctionEnd
-  
-  Function mysql-page-two
-    StrCpy $R0 "0"
-    StrCpy $R1 "0"
-    StrCpy $R2 "0"
-    
-    ${If} ${SectionIsSelected} ${section_two}
-      ;ReserveFile "ps_portal-mysql_page-2.ini"
-      ;!insertmacro MUI_HEADER_TEXT "Informacje" "W wyniku tej instalacji zostanie zainstalowany system PS PORTAL."
-      ;!insertmacro MUI_INSTALLOPTIONS_EXTRACT "ps_portal-mysql_page-2.ini"
-      ;!insertmacro MUI_INSTALLOPTIONS_DISPLAY "ps_portal-mysql_page-2.ini"
-      
-      ;!insertmacro MUI_INSTALLOPTIONS_READ $R0 "ps_portal-mysql_page-2.ini" "Field 2" "State"
-      ;!insertmacro MUI_INSTALLOPTIONS_READ $R1 "ps_portal-mysql_page-2.ini" "Field 3" "State"
-      ;!insertmacro MUI_INSTALLOPTIONS_READ $R2 "ps_portal-mysql_page-2.ini" "Field 4" "State"
-      
-      ${If} $R0 == 1
-        StrCpy $mysql_log_general "1"
-      ${EndIf}
+     ${NSD_CreateText} 0 100 200 20 ""
+     pop $text1
      
-      ${If} $R1 == 1
-        StrCpy $mysql_log_slow "1"
-      ${EndIf}
-      
-      ${If} $R2 == 1
-        StrCpy $mysql_log_bin "1"      
-      ${EndIf}
-      
+     ${NSD_CreateLabel} 0 130 200 20 "Administrator e-mail address:"
+     ${NSD_CreateText} 0 150 200 20 ""
+     pop $text2
+     
+    nsDialogs::Show  
+    ${EndIf}
+  FunctionEnd
+
+  Function mysql_config_adv_one
+    ${If} ${SectionIsSelected} ${section_two}
+    nsDialogs::Create /NOUNLOAD 1018    
+    nsDialogs::Show    
+    ${EndIf}
+  FunctionEnd
+
+  Function mysql_config_adv_two
+    ${If} ${SectionIsSelected} ${section_two}
+    nsDialogs::Create /NOUNLOAD 1018
+    nsDialogs::Show    
     ${EndIf}
   FunctionEnd
   
-  Function mysql-page-three
+  Function mysql_config_spl_one
     ${If} ${SectionIsSelected} ${section_one}
-      ;ReserveFile "ps_portal-mysql_page-3.ini"
-      ;!insertmacro MUI_HEADER_TEXT "Informacje" "W wyniku tej instalacji zostanie zainstalowany system PS PORTAL."
-      ;!insertmacro MUI_INSTALLOPTIONS_EXTRACT "ps_portal-mysql_page-3.ini"
-      ;!insertmacro MUI_INSTALLOPTIONS_DISPLAY "ps_portal-mysql_page-3.ini"
-      
-      ;!insertmacro MUI_INSTALLOPTIONS_READ $R0 "ps_portal-mysql_page-3.ini" "Field 1" "State"
-      ;!insertmacro MUI_INSTALLOPTIONS_READ $R1 "ps_portal-mysql_page-3.ini" "Field 2" "State"
-     
-      StrCmp $R0 "" mustcomplete
-      StrCmp $R1 "" mustcomplete
-     
-      ${If} $R0 != $R1
-        goto incorrect_passwd
-      ${EndIf}
-      goto exit
-      
-     incorrect_passwd:
-        MessageBox MB_OK|MB_ICONEXCLAMATION "Podane has³a ró¿ni¹ siê od siebie! Spróbuj ponownie!"
-        call mysql-page-three      
-      mustcomplete:
-        MessageBox MB_OK|MB_ICONEXCLAMATION "Aby kontynuowaæ instalacjê nale¿y uzupe³niæ wszystkie pola!"
-        call mysql-page-three   
-      exit:
-        Pop $R0  
+    nsDialogs::Create /NOUNLOAD 1018
+    nsDialogs::Show    
     ${EndIf}
   FunctionEnd
   
-  Function ps-portal-summary
-    ;ReserveFile "ps_portal-summary.ini"
-    ;!insertmacro MUI_HEADER_TEXT "Informacje" "W wyniku tej instalacji zostanie zainstalowany system PS PORTAL."
-    ;!insertmacro MUI_INSTALLOPTIONS_EXTRACT "ps_portal-summary.ini"
-    ;!insertmacro MUI_INSTALLOPTIONS_DISPLAY "ps_portal-summary.ini"
-  FunctionEnd
-  
-/** CUSTOM PAGES END **/  
-
   Section "Uninstall"
     SetShellVarContext all ; menu start from all users
 
