@@ -47,7 +47,6 @@
   page directory
   
   page custom apache2_config_adv_one
-  page custom mysql_config_spl_one
   page custom mysql_config_adv_one
   page custom mysql_config_adv_two
   
@@ -291,22 +290,51 @@
 
   Function mysql_config_adv_one
     ${If} ${SectionIsSelected} ${section_two}
-    nsDialogs::Create /NOUNLOAD 1018    
-    nsDialogs::Show    
+      nsDialogs::Create /NOUNLOAD 1018
+      pop $dialog
+      
+      ${If} $dialog == error
+        abort
+      ${EndIf}
+      
+      ${NSD_CreateLabel} 0 0 200 20 "MySQL settings."
+      
+      ${NSD_CreateLabel} 0 30 200 20 "Service name:"
+      ${NSD_CreateText} 0 50 200 20 "MySQL56"
+      pop $text0
+        
+      ${NSD_CreateLabel} 0 80 200 20 "Server port:"
+      ${NSD_CreateText} 0 100 200 20 "3306"
+      pop $text1
+      
+      ${NSD_CreateCheckbox} 0 140 100% 8u "General log"
+      ${NSD_CreateCheckbox} 0 160 100% 8u "Slow query log"
+      ${NSD_CreateCheckbox} 0 180 100% 8u "Bin log"
+      
+      nsDialogs::Show    
     ${EndIf}
   FunctionEnd
 
   Function mysql_config_adv_two
     ${If} ${SectionIsSelected} ${section_two}
-    nsDialogs::Create /NOUNLOAD 1018
-    nsDialogs::Show    
-    ${EndIf}
-  FunctionEnd
-  
-  Function mysql_config_spl_one
-    ${If} ${SectionIsSelected} ${section_one}
-    nsDialogs::Create /NOUNLOAD 1018
-    nsDialogs::Show    
+      nsDialogs::Create /NOUNLOAD 1018
+      pop $dialog
+      
+      ${If} $dialog == error
+        abort
+      ${EndIf}
+          
+      ${NSD_CreateLabel} 0 0 200 20 "MySQL settings."
+      
+      ${NSD_CreateLabel} 0 30 200 20 "root password:"
+      ${NSD_CreateText} 0 50 200 20 ""
+      pop $text0
+        
+      ${NSD_CreateLabel} 0 80 200 20 "repeat password:"
+      ${NSD_CreateText} 0 100 200 20 ""
+      pop $text1
+    
+      nsDialogs::Show    
     ${EndIf}
   FunctionEnd
   
