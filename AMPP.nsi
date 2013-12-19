@@ -68,6 +68,8 @@
   var checkbox_log_bin
   
   ; mysql variables
+  var mysql_passwd_file
+  
   var mysql_service_name
   var mysql_port
   var mysql_passwd
@@ -145,19 +147,19 @@
       call detect_apache_settings
     ${EndIf}
     
-    ${Unless} ${TCPPortOpen} 80
+    ${If} ${TCPPortOpen} 80
         MessageBox MB_YESNO|MB_ICONQUESTION "port 80 is used... apache won't work. continue?" IDYES yes IDNO no
         no:
           MessageBox MB_OK|MB_ICONEXCLAMATION "bye bye!"
           Quit
         yes:
           Pop $0
-    ${EndUnless}
+    ${EndIf}
   
-    SetOutPath "$TEMP\portal\"
+    SetOutPath "$TEMP\ampp\"
     File "inst-files\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi"
     DetailPrint "Install Apache HTTP Server..."
-    ExecCmd::exec 'msiexec /i "$TEMP\portal\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi" /qb! INSTALLDIR="$INSTDIR\apache2" SERVERNAME=$apache_server_name SERVERADMIN="$apache_admin_email" ALLUSERS=1 RebootYesNo=No /L*V "$INSTDIR\Log\apach2.log"'
+    ExecCmd::exec 'msiexec /i "$TEMP\ampp\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi" /qb! INSTALLDIR="$INSTDIR\apache2" SERVERNAME=$apache_server_name SERVERADMIN="$apache_admin_email" ALLUSERS=1 RebootYesNo=No /L*V "$INSTDIR\Log\apach2.log"'
     
     DetailPrint "Configure apache HTTP Server..."
     ${textreplace::ReplaceInFile} "$INSTDIR\apache2\conf\httpd.conf" "$INSTDIR\apache2\conf\httpd.conf" "htdocs" "www-root" "/S=1 /C=1 /AO=1" $0
@@ -165,16 +167,19 @@
     
     ExecWait '"$INSTDIR\apache2\bin\httpd.exe" -k restart'
     
-    Delete "$TEMP\portal\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi"
+    Delete "$TEMP\ampp\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi"
   FunctionEnd
   
   Function php_install
-    SetOutPath "$TEMP\portal\"
+    SetOutPath "$TEMP\ampp\"
     File "inst-files\php-5.3.28-Win32-VC9-x86.msi"
     DetailPrint "Install PHP..."
-    ExecWait 'msiexec /i "$TEMP\portal\php-5.3.28-Win32-VC9-x86.msi" /qb! INSTALLDIR="$INSTDIR\php" apacheDIR="$INSTDIR\apache2\conf" ADDLOCAL="ScriptExecutable,cgi,apache22,ext_php_mysqli,ext_php_mysql,ext_php_mbstring" /L*V "$INSTDIR\Log\php.log"'
+    ExecWait 'msiexec /i "$TEMP\ampp\php-5.3.28-Win32-VC9-x86.msi" /qb! INSTALLDIR="$INSTDIR\php" apacheDIR="$INSTDIR\apache2\conf" ADDLOCAL="ScriptExecutable,cgi,apache22,ext_php_mysqli,ext_php_mysql,ext_php_mbstring" /L*V "$INSTDIR\Log\php.log"'
+
+    DetailPrint "Restart Apache HTTP Server..."
+    ExecWait '"$INSTDIR\apache2\bin\httpd.exe" -k restart'
     
-    Delete "$TEMP\portal\php-5.3.28-Win32-VC9-x86.msi"
+    Delete "$TEMP\ampp\php-5.3.28-Win32-VC9-x86.msi"
   FunctionEnd
 
   Function create_www
@@ -184,12 +189,12 @@
 
   Function phpmyadmin_install
     CreateDirectory "$INSTDIR\apache2\www-root\"
-    SetOutPath "$TEMP\portal\"
+    SetOutPath "$TEMP\ampp\"
     File "inst-files\phpMyAdmin-4.0.9-english.zip"
     DetailPrint "Install phpMyAdmin..."
-    !insertmacro ZIPDLL_EXTRACT "$TEMP\portal\phpMyAdmin-4.0.9-english.zip" "$INSTDIR\apache2\www-root" "<ALL>"
+    !insertmacro ZIPDLL_EXTRACT "$TEMP\ampp\phpMyAdmin-4.0.9-english.zip" "$INSTDIR\apache2\www-root" "<ALL>"
     
-    Delete "$TEMP\portal\phpMyAdmin-4.0.9-english.zip"
+    Delete "$TEMP\ampp\phpMyAdmin-4.0.9-english.zip"
   FunctionEnd
   
   Function mysql_install
@@ -201,19 +206,19 @@
       StrCpy $mysql_log_bin "1"
     ${EndIf}
     
-    ${Unless} ${TCPPortOpen} 3306
+    ${If} ${TCPPortOpen} 3306
       MessageBox MB_YESNO|MB_ICONQUESTION "port 3306 is used... mysql won't work. continue?" IDYES yes IDNO no
       no:
         MessageBox MB_OK|MB_ICONEXCLAMATION "bye bye!"
         Quit
       yes:
         Pop $0
-    ${EndUnless}
+    ${EndIf}
     
-    SetOutPath "$TEMP\portal\"
+    SetOutPath "$TEMP\ampp\"
     File "inst-files\mysql-5.6.15-win32.zip"
     DetailPrint "Install MySQL Server..."
-    !insertmacro ZIPDLL_EXTRACT "$TEMP\portal\mysql-5.6.15-win32.zip" "$INSTDIR\MySQL" "<ALL>"
+    !insertmacro ZIPDLL_EXTRACT "$TEMP\ampp\mysql-5.6.15-win32.zip" "$INSTDIR\MySQL" "<ALL>"
     
     DetailPrint "Configure MySQL Server..."
     
@@ -253,24 +258,27 @@
     DetailPrint "Run service $mysql_service_name..."
     ExecWait '"net" start mysql' ; starts mysql service
     
-    SetOutPath "$TEMP\portal"
+    SetOutPath "$TEMP\ampp"
     File "mysql-conf\passwd.sql"
-    ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\bin\passwd.sql" "$INSTDIR\MySQL\bin\passwd.sql" "my-new-password" "$mysql_passwd" "/S=1 /C=1 /AO=1" $0 ; replaces my-new-password with specific user password
+    ${textreplace::ReplaceInFile} "$TEMP\ampp\passwd.sql" "$TEMP\ampp\passwd.sql" "my-new-password" "$mysql_passwd" "/S=1 /C=1 /AO=1" $0 ; replaces my-new-password with specific user password
     
-    ExecWait '"cmd.exe" /S /C ""$INSTDIR\MySQL\bin\mysql.exe" -u root < "$TEMP\portal\passwd.sql""' ; changes root password
+    StrCpy $mysql_passwd_file "$TEMP\ampp\passwd.sql"
+    ExecWait '"cmd.exe" /C "$INSTDIR\MySQL\bin\mysql.exe" -u root < $mysql_passwd_file' ; changes root password
     
-    Delete "$INSTDIR\MySQL\bin\passwd.sql"
-    Delete "$TEMP\portal\mysql-5.6.15-win32.zip"
+    ;ExecWait '"cmd.exe" /C "C:\Program Files\AMPP1\MySQL\bin\mysql.exe" -u root < $sql_file' $0 ; changes root password
+    
+    ;Delete "$TEMP\ampp\passwd.sql"
+    Delete "$TEMP\ampp\mysql-5.6.15-win32.zip"
   FunctionEnd
   
   Function dotnet_install
     ReadRegStr $0 HKLM "SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" 'TargetVersion'
     ${If} $0 != "4.0.0"
-      SetOutPath "$TEMP\portal\"
+      SetOutPath "$TEMP\ampp\"
       File "inst-files\dotNetFx40_Full_x86_x64.exe"
       DetailPrint "Install .NET Framework v.4.0..."
-      ExecCmd::exec '"$TEMP\portal\dotNetFx40_Full_x86_x64.exe" /passive /norestart'
-      Delete "$TEMP\portal\dotNetFx40_Full_x86_x64.exe"
+      ExecCmd::exec '"$TEMP\ampp\dotNetFx40_Full_x86_x64.exe" /passive /norestart'
+      Delete "$TEMP\ampp\dotNetFx40_Full_x86_x64.exe"
     ${EndIf}
   FunctionEnd
   
@@ -418,14 +426,20 @@
     SetShellVarContext all ; menu start from all users
 
     ; apache2
+    DetailPrint "Uninstall Apache HTTP Server..."
     ExecCmd::exec 'msiexec /X{85262A06-2D8C-4BC1-B6ED-5A705D09CFFC} /norestart /qb! ALLUSERS=1 REMOVE="ALL" >ExecCmd.log'
     
     ; php5
+    DetailPrint "Uninstall PHP..."
     ExecCmd::exec 'msiexec /X{F1294EED-6F8E-4C87-B34A-AB045356531D} /norestart /qb! ALLUSERS=1 REMOVE="ALL" >ExecCmd.log'
     
     ; mysql
-    ExecWait '"net" stop mysql'
+    DetailPrint "Stop MySQL service..."
+    ExecWait '"net" stop MySQL56'
+    DetailPrint "Remove MySQL service..."
     ExecWait '"MySQL\bin\mysqld.exe" --remove'
+    
+    
    SectionEnd
    
   Function un.onInit ; uninstaller init
