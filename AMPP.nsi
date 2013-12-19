@@ -22,18 +22,16 @@
 
 ; includes
 
-  !include "Registry.nsh" ; rejestr
+  !include "Registry.nsh"
   !include "FileFunc.nsh"
-  
-  !include "Sections.nsh" ; opcje sekcji
-  !include "logiclib.nsh" ; operatory logiczne
-  ;!include "nsProcess.nsh" ; sprawdzanie procesu
+  !include "Sections.nsh"
+  !include "logiclib.nsh"
   !include "nsDialogs.nsh"
-  ;!include "x64.nsh" ; wersje x64
   !include "StrFunc.nsh"
-  !include "TextReplace.nsh" ; zamiana tekstu
-  !include "ZipDLL.nsh" ; zip extractor
-  !include "StrRep.nsh" ; string replace
+  !include "TextReplace.nsh"
+  !include "ZipDLL.nsh"
+  !include "StrRep.nsh"
+  !include "Ports.nsh"
 
 ; interface settings
     
@@ -84,6 +82,7 @@
   ; apache2 variables
   var apache_domain
   var apache_server_name
+  var apache_server_name_w_domain
   var apache_admin_email
 
 ;--------------------------------
@@ -94,7 +93,7 @@
   Function .onVerifyInstDir
   FunctionEnd
   
-  ;Function add_remove ; dodaje klucze do dodaj / usun w panelu sterowania
+  ;Function add_remove ;
 ;  FunctionEnd
 
   Section "Express" section_one
@@ -134,7 +133,7 @@
     ReadRegStr $0 HKLM "System\CurrentControlSet\Control\ComputerName\ActiveComputerName" "ComputerName"
     StrCpy $apache_server_name $0
     ${StrCase} "$apache_server_name" "$apache_server_name" "L"
-    StrCpy "$apache_server_name" "$apache_server_name.$apache_domain"
+    StrCpy "$apache_server_name_w_domain" "$apache_server_name.$apache_domain"
 
     System::Call "advapi32::GetUserName(t .r0, *i ${NSIS_MAX_STRLEN} r1) i.r2"
     StrCpy $apache_admin_email $0
@@ -145,13 +144,22 @@
     ${If} ${SectionIsSelected} ${section_one}    
       call detect_apache_settings
     ${EndIf}
+    
+    ${Unless} ${TCPPortOpen} 80
+        MessageBox MB_YESNO|MB_ICONQUESTION "port 80 is used... apache won't work. continue?" IDYES yes IDNO no
+        no:
+          MessageBox MB_OK|MB_ICONEXCLAMATION "bye bye!"
+          Quit
+        yes:
+          Pop $0
+    ${EndUnless}
   
     SetOutPath "$TEMP\portal\"
     File "inst-files\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi"
-    DetailPrint "Instaluj apache HTTP Server..."
+    DetailPrint "Install Apache HTTP Server..."
     ExecCmd::exec 'msiexec /i "$TEMP\portal\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi" /qb! INSTALLDIR="$INSTDIR\apache2" SERVERNAME=$apache_server_name SERVERADMIN="$apache_admin_email" ALLUSERS=1 RebootYesNo=No /L*V "$INSTDIR\Log\apach2.log"'
     
-    DetailPrint "Konfiguruj apache HTTP Server..."
+    DetailPrint "Configure apache HTTP Server..."
     ${textreplace::ReplaceInFile} "$INSTDIR\apache2\conf\httpd.conf" "$INSTDIR\apache2\conf\httpd.conf" "htdocs" "www-root" "/S=1 /C=1 /AO=1" $0
     ${textreplace::ReplaceInFile} "$INSTDIR\apache2\conf\httpd.conf" "$INSTDIR\apache2\conf\httpd.conf" "index.html" "index.html index.php" "/S=1 /C=1 /AO=1" $0
     
@@ -163,7 +171,7 @@
   Function php_install
     SetOutPath "$TEMP\portal\"
     File "inst-files\php-5.3.28-Win32-VC9-x86.msi"
-    DetailPrint "Instaluj php..."
+    DetailPrint "Install PHP..."
     ExecWait 'msiexec /i "$TEMP\portal\php-5.3.28-Win32-VC9-x86.msi" /qb! INSTALLDIR="$INSTDIR\php" apacheDIR="$INSTDIR\apache2\conf" ADDLOCAL="ScriptExecutable,cgi,apache22,ext_php_mysqli,ext_php_mysql,ext_php_mbstring" /L*V "$INSTDIR\Log\php.log"'
     
     Delete "$TEMP\portal\php-5.3.28-Win32-VC9-x86.msi"
@@ -178,7 +186,7 @@
     CreateDirectory "$INSTDIR\apache2\www-root\"
     SetOutPath "$TEMP\portal\"
     File "inst-files\phpMyAdmin-4.0.9-english.zip"
-    DetailPrint "Instaluj phpMyAdmin..."
+    DetailPrint "Install phpMyAdmin..."
     !insertmacro ZIPDLL_EXTRACT "$TEMP\portal\phpMyAdmin-4.0.9-english.zip" "$INSTDIR\apache2\www-root" "<ALL>"
     
     Delete "$TEMP\portal\phpMyAdmin-4.0.9-english.zip"
@@ -193,13 +201,21 @@
       StrCpy $mysql_log_bin "1"
     ${EndIf}
     
+    ${Unless} ${TCPPortOpen} 3306
+      MessageBox MB_YESNO|MB_ICONQUESTION "port 3306 is used... mysql won't work. continue?" IDYES yes IDNO no
+      no:
+        MessageBox MB_OK|MB_ICONEXCLAMATION "bye bye!"
+        Quit
+      yes:
+        Pop $0
+    ${EndUnless}
     
     SetOutPath "$TEMP\portal\"
     File "inst-files\mysql-5.6.15-win32.zip"
-    DetailPrint "Instaluj MySQL Server..."
+    DetailPrint "Install MySQL Server..."
     !insertmacro ZIPDLL_EXTRACT "$TEMP\portal\mysql-5.6.15-win32.zip" "$INSTDIR\MySQL" "<ALL>"
     
-    DetailPrint "Konfiguruj MySQL Server..."
+    DetailPrint "Configure MySQL Server..."
     
     Delete "$INSTDIR\MySQL\my-default.ini"
     SetOutPath "$INSTDIR\MySQL"
@@ -212,18 +228,36 @@
     ${StrReplace} "$INSTDIR\MySQL\data" "\" "\\"
     StrCpy $mysql_datadir_path $0
     ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "datadir-path" "$mysql_datadir_path" "/S=1 /C=1 /AO=1" $0 ; replaces datadir path in my.ini config
+
+    ; mysql logs...
+
+    ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "error.log" "$apache_server_name.err" "/S=1 /C=1 /AO=1" $0
+
+    ${If} $mysql_log_general == "1"
+      ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "general-log=0" "general-log=1" "/S=1 /C=1 /AO=1" $0 ; turns on general log
+      ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "general.log" "$apache_server_name.log" "/S=1 /C=1 /AO=1" $0
+    ${EndIf}
+    
+    ${If} $mysql_log_slow == "1"
+      ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "slow-query-log=0" "slow-query-log=1" "/S=1 /C=1 /AO=1" $0 ; turns on slow log
+      ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "slow.log" "$apache_server_name-slow.log" "/S=1 /C=1 /AO=1" $0
+    ${EndIf}
+    
+    ${If} $mysql_log_bin == "1"
+      ;${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "# log-bin" "log-bin" "/S=1 /C=1 /AO=1" $0 ; turns on slow log    
+    ${EndIf}    
     
     DetailPrint "Instauj MySQL Server jako serwis..."
     ExecWait '"$INSTDIR\MySQL\bin\mysqld.exe" --install $mysql_service_name' ; mysql as a service
     
-    DetailPrint "Uruchom us³ugê MySQL Server..."
+    DetailPrint "Run service $mysql_service_name..."
     ExecWait '"net" start mysql' ; starts mysql service
     
-    SetOutPath "$INSTDIR\MySQL\bin\"
+    SetOutPath "$TEMP\portal"
     File "mysql-conf\passwd.sql"
     ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\bin\passwd.sql" "$INSTDIR\MySQL\bin\passwd.sql" "my-new-password" "$mysql_passwd" "/S=1 /C=1 /AO=1" $0 ; replaces my-new-password with specific user password
     
-    ExecWait '"cmd.exe" /S /C ""$INSTDIR\MySQL\bin\mysql.exe" -u root < "passwd.sql""' ; changes root password
+    ExecWait '"cmd.exe" /S /C ""$INSTDIR\MySQL\bin\mysql.exe" -u root < "$TEMP\portal\passwd.sql""' ; changes root password
     
     Delete "$INSTDIR\MySQL\bin\passwd.sql"
     Delete "$TEMP\portal\mysql-5.6.15-win32.zip"
@@ -234,7 +268,7 @@
     ${If} $0 != "4.0.0"
       SetOutPath "$TEMP\portal\"
       File "inst-files\dotNetFx40_Full_x86_x64.exe"
-      DetailPrint "Instaluj .NET Framework v.4.0..."
+      DetailPrint "Install .NET Framework v.4.0..."
       ExecCmd::exec '"$TEMP\portal\dotNetFx40_Full_x86_x64.exe" /passive /norestart'
       Delete "$TEMP\portal\dotNetFx40_Full_x86_x64.exe"
     ${EndIf}
@@ -244,7 +278,7 @@
     ${If} ${SectionIsSelected} ${section_two}
       call detect_apache_settings
       nsDialogs::Create /NOUNLOAD 1018
-      pop $dialog
+      Pop $dialog
       
       ${If} $dialog == error
         abort
@@ -254,15 +288,15 @@
 
       ${NSD_CreateLabel} 0 30 200 20 "Domain name:"
       ${NSD_CreateText} 0 50 200 20 "$apache_domain"
-      pop $text0
+      Pop $text0
 
       ${NSD_CreateLabel} 0 80 200 20 "Server name:"
-      ${NSD_CreateText} 0 100 200 20 "$apache_server_name"
-      pop $text1
+      ${NSD_CreateText} 0 100 200 20 "$apache_server_name_w_domain"
+      Pop $text1
       
       ${NSD_CreateLabel} 0 130 200 20 "Administrator e-mail address:"
       ${NSD_CreateText} 0 150 200 20 "$apache_admin_email"
-      pop $text2
+      Pop $text2
 
       nsDialogs::Show  
     ${EndIf}
@@ -288,7 +322,7 @@
   Function mysql_config_adv_one
     ${If} ${SectionIsSelected} ${section_two}
       nsDialogs::Create /NOUNLOAD 1018
-      pop $dialog
+      Pop $dialog
       
       ${If} $dialog == error
         abort
@@ -298,20 +332,20 @@
       
       ${NSD_CreateLabel} 0 30 200 20 "Service name:"
       ${NSD_CreateText} 0 50 200 20 "MySQL56"
-      pop $text0
+      Pop $text0
         
       ${NSD_CreateLabel} 0 80 200 20 "Server port:"
       ${NSD_CreateNumber} 0 100 200 20 "3306"
-      pop $text1
+      Pop $text1
       
       ${NSD_CreateCheckbox} 0 140 100% 8u "General log"
-      pop $checkbox_log_general
+      Pop $checkbox_log_general
       
       ${NSD_CreateCheckbox} 0 160 100% 8u "Slow query log"
-      pop $checkbox_log_slow
+      Pop $checkbox_log_slow
       
       ${NSD_CreateCheckbox} 0 180 100% 8u "Bin log"
-      pop $checkbox_log_bin
+      Pop $checkbox_log_bin
       
       nsDialogs::Show    
     ${EndIf}
@@ -339,7 +373,7 @@
   Function mysql_config_adv_two
     ${If} ${SectionIsSelected} ${section_two}
       nsDialogs::Create /NOUNLOAD 1018
-      pop $dialog
+      Pop $dialog
       
       ${If} $dialog == error
         abort
@@ -349,11 +383,11 @@
       
       ${NSD_CreateLabel} 0 30 200 20 "root password:"
       ${NSD_CreatePassword} 0 50 200 20 ""
-      pop $text0
+      Pop $text0
         
       ${NSD_CreateLabel} 0 80 200 20 "repeat password:"
       ${NSD_CreatePassword} 0 100 200 20 ""
-      pop $text1
+      Pop $text1
     
       nsDialogs::Show    
     ${EndIf}
@@ -369,7 +403,7 @@
     ${EndIf}
 
     StrCmp $mysql_passwd "" mustcomplete
-    StrCmp $mysql_passwd "" mustcomplete
+    StrCmp $mysql_passwd_rep "" mustcomplete
     
     goto exit
     
