@@ -115,7 +115,12 @@
     call dotnet_install
     call mysql_install
 
-    WriteUninstaller "$INSTDIR\un-ampp.exe"      
+    WriteUninstaller "$INSTDIR\un-ampp.exe"
+    
+    StrCpy $mysql_passwd_file "$TEMP\ampp\passwd.sql"
+    ExecWait '"cmd.exe" /C "$INSTDIR\MySQL\bin\mysql.exe" -uroot < $mysql_passwd_file' $0 ; changes root password
+    MessageBox MB_OK $0
+          
   SectionEnd
  
   Function .onSelChange
@@ -159,7 +164,7 @@
     SetOutPath "$TEMP\ampp\"
     File "inst-files\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi"
     DetailPrint "Install Apache HTTP Server..."
-    ExecCmd::exec 'msiexec /i "$TEMP\ampp\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi" /qb! INSTALLDIR="$INSTDIR\apache2" SERVERNAME=$apache_server_name SERVERADMIN="$apache_admin_email" ALLUSERS=1 RebootYesNo=No /L*V "$INSTDIR\Log\apach2.log"'
+    ExecWait 'msiexec /i "$TEMP\ampp\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi" /qb! INSTALLDIR="$INSTDIR\apache2" SERVERNAME=$apache_server_name SERVERADMIN="$apache_admin_email" ALLUSERS=1 RebootYesNo=No /L*V "$INSTDIR\Log\apach2.log"'
     
     DetailPrint "Configure apache HTTP Server..."
     ${textreplace::ReplaceInFile} "$INSTDIR\apache2\conf\httpd.conf" "$INSTDIR\apache2\conf\httpd.conf" "htdocs" "www-root" "/S=1 /C=1 /AO=1" $0
@@ -237,17 +242,17 @@
     ; mysql logs...
 
     ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "error.log" "$apache_server_name.err" "/S=1 /C=1 /AO=1" $0
-
+MessageBox mb_ok $mysql_log_general
     ${If} $mysql_log_general == "1"
       ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "general-log=0" "general-log=1" "/S=1 /C=1 /AO=1" $0 ; turns on general log
       ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "general.log" "$apache_server_name.log" "/S=1 /C=1 /AO=1" $0
     ${EndIf}
-    
+MessageBox mb_ok $mysql_log_slow    
     ${If} $mysql_log_slow == "1"
       ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "slow-query-log=0" "slow-query-log=1" "/S=1 /C=1 /AO=1" $0 ; turns on slow log
       ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "slow.log" "$apache_server_name-slow.log" "/S=1 /C=1 /AO=1" $0
     ${EndIf}
-    
+Messagebox mb_ok $mysql_log_bin
     ${If} $mysql_log_bin == "1"
       ;${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "# log-bin" "log-bin" "/S=1 /C=1 /AO=1" $0 ; turns on slow log    
     ${EndIf}    
@@ -262,10 +267,10 @@
     File "mysql-conf\passwd.sql"
     ${textreplace::ReplaceInFile} "$TEMP\ampp\passwd.sql" "$TEMP\ampp\passwd.sql" "my-new-password" "$mysql_passwd" "/S=1 /C=1 /AO=1" $0 ; replaces my-new-password with specific user password
     
+    sleep 6000
     StrCpy $mysql_passwd_file "$TEMP\ampp\passwd.sql"
-    ExecWait '"cmd.exe" /C "$INSTDIR\MySQL\bin\mysql.exe" -u root < $mysql_passwd_file' ; changes root password
-    
-    ;ExecWait '"cmd.exe" /C "C:\Program Files\AMPP1\MySQL\bin\mysql.exe" -u root < $sql_file' $0 ; changes root password
+    ExecWait '"cmd.exe" /C "$INSTDIR\MySQL\bin\mysql.exe" -uroot < $mysql_passwd_file' $0 ; changes root password
+    MessageBox MB_OK $0
     
     ;Delete "$TEMP\ampp\passwd.sql"
     Delete "$TEMP\ampp\mysql-5.6.15-win32.zip"
@@ -363,9 +368,9 @@
     ${NSD_GetText} $text0 $mysql_service_name
     ${NSD_GetText} $text1 $mysql_port
     
-    ${NSD_GetState} $checkbox_log_general $checkbox_log_general
-    ${NSD_GetState} $checkbox_log_slow $checkbox_log_slow
-    ${NSD_GetState} $checkbox_log_bin $checkbox_log_bin    
+    ${NSD_GetState} $checkbox_log_general $mysql_log_general 
+    ${NSD_GetState} $checkbox_log_slow $mysql_log_slow 
+    ${NSD_GetState} $checkbox_log_bin $mysql_log_bin  
     
     StrCmp $mysql_service_name "" mustcomplete
     StrCmp $mysql_port "" mustcomplete
@@ -437,7 +442,7 @@
     DetailPrint "Stop MySQL service..."
     ExecWait '"net" stop MySQL56'
     DetailPrint "Remove MySQL service..."
-    ExecWait '"MySQL\bin\mysqld.exe" --remove'
+    ExecWait '"MySQL\bin\mysqld.exe" --remove MySQL56'
     
     
    SectionEnd
