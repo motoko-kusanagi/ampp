@@ -68,7 +68,7 @@
   var checkbox_log_bin
   
   ; mysql variables
-  var mysql_passwd_file
+  var mysql_passwdfile
   
   var mysql_service_name
   var mysql_port
@@ -117,8 +117,8 @@
 
     WriteUninstaller "$INSTDIR\un-ampp.exe"
     
-    StrCpy $mysql_passwd_file "$TEMP\ampp\passwd.sql"
-    ExecWait '"cmd.exe" /C "$INSTDIR\MySQL\bin\mysql.exe" -uroot < $mysql_passwd_file' $0 ; changes root password
+    StrCpy $mysql_passwdfile "$TEMP\ampp\passwd.sql"
+    ExecWait '"cmd.exe" /C "$INSTDIR\MySQL\bin\mysql.exe" -uroot < $mysql_passwdfile' $0 ; changes root password
     MessageBox MB_OK $0
           
   SectionEnd
@@ -242,17 +242,17 @@
     ; mysql logs...
 
     ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "error.log" "$apache_server_name.err" "/S=1 /C=1 /AO=1" $0
-MessageBox mb_ok $mysql_log_general
+
     ${If} $mysql_log_general == "1"
       ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "general-log=0" "general-log=1" "/S=1 /C=1 /AO=1" $0 ; turns on general log
       ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "general.log" "$apache_server_name.log" "/S=1 /C=1 /AO=1" $0
     ${EndIf}
-MessageBox mb_ok $mysql_log_slow    
+    
     ${If} $mysql_log_slow == "1"
       ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "slow-query-log=0" "slow-query-log=1" "/S=1 /C=1 /AO=1" $0 ; turns on slow log
       ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "slow.log" "$apache_server_name-slow.log" "/S=1 /C=1 /AO=1" $0
     ${EndIf}
-Messagebox mb_ok $mysql_log_bin
+
     ${If} $mysql_log_bin == "1"
       ;${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "# log-bin" "log-bin" "/S=1 /C=1 /AO=1" $0 ; turns on slow log    
     ${EndIf}    
@@ -268,8 +268,8 @@ Messagebox mb_ok $mysql_log_bin
     ${textreplace::ReplaceInFile} "$TEMP\ampp\passwd.sql" "$TEMP\ampp\passwd.sql" "my-new-password" "$mysql_passwd" "/S=1 /C=1 /AO=1" $0 ; replaces my-new-password with specific user password
     
     sleep 6000
-    StrCpy $mysql_passwd_file "$TEMP\ampp\passwd.sql"
-    ExecWait '"cmd.exe" /C "$INSTDIR\MySQL\bin\mysql.exe" -uroot < $mysql_passwd_file' $0 ; changes root password
+    StrCpy $mysql_passwdfile "$TEMP\ampp\passwd.sql"
+    ExecWait '"cmd.exe" /C "$INSTDIR\MySQL\bin\mysql.exe" -uroot < $mysql_passwdfile' $0 ; changes root password
     MessageBox MB_OK $0
     
     ;Delete "$TEMP\ampp\passwd.sql"
@@ -304,7 +304,7 @@ Messagebox mb_ok $mysql_log_bin
       Pop $text0
 
       ${NSD_CreateLabel} 0 80 200 20 "Server name:"
-      ${NSD_CreateText} 0 100 200 20 "$apache_server_name_w_domain"
+      ${NSD_CreateText} 0 100 200 20 "$apache_server_name"
       Pop $text1
       
       ${NSD_CreateLabel} 0 130 200 20 "Administrator e-mail address:"
