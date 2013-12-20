@@ -164,7 +164,7 @@
     SetOutPath "$TEMP\ampp\"
     File "inst-files\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi"
     DetailPrint "Install Apache HTTP Server..."
-    ExecWait 'msiexec /i "$TEMP\ampp\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi" /qb! INSTALLDIR="$INSTDIR\apache2" SERVERNAME=$apache_server_name SERVERADMIN="$apache_admin_email" ALLUSERS=1 RebootYesNo=No /L*V "$INSTDIR\Log\apach2.log"'
+    ExecWait 'msiexec /i "$TEMP\ampp\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi" /qb! INSTALLDIR="$INSTDIR\Apache2" SERVERNAME=$apache_server_name SERVERADMIN="$apache_admin_email" ALLUSERS=1 RebootYesNo=No /L*V "$INSTDIR\Log\apache2.log"'
     
     DetailPrint "Configure apache HTTP Server..."
     ${textreplace::ReplaceInFile} "$INSTDIR\apache2\conf\httpd.conf" "$INSTDIR\apache2\conf\httpd.conf" "htdocs" "www-root" "/S=1 /C=1 /AO=1" $0
@@ -179,7 +179,7 @@
     SetOutPath "$TEMP\ampp\"
     File "inst-files\php-5.3.28-Win32-VC9-x86.msi"
     DetailPrint "Install PHP..."
-    ExecWait 'msiexec /i "$TEMP\ampp\php-5.3.28-Win32-VC9-x86.msi" /qb! INSTALLDIR="$INSTDIR\php" apacheDIR="$INSTDIR\apache2\conf" ADDLOCAL="ScriptExecutable,cgi,apache22,ext_php_mysqli,ext_php_mysql,ext_php_mbstring" /L*V "$INSTDIR\Log\php.log"'
+    ExecWait 'msiexec /i "$TEMP\ampp\php-5.3.28-Win32-VC9-x86.msi" /qb! INSTALLDIR="$INSTDIR\PHP" apacheDIR="$INSTDIR\apache2\conf" ADDLOCAL="ScriptExecutable,cgi,apache22,ext_php_mysqli,ext_php_mysql,ext_php_mbstring" /L*V "$INSTDIR\Log\php.log"'
 
     DetailPrint "Restart Apache HTTP Server..."
     ExecWait '"$INSTDIR\apache2\bin\httpd.exe" -k restart'
@@ -254,7 +254,9 @@
     ${EndIf}
 
     ${If} $mysql_log_bin == "1"
-      ;${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "# log-bin" "log-bin" "/S=1 /C=1 /AO=1" $0 ; turns on slow log    
+      ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "bin.log" "$apache_server_name-bin.log" "/S=1 /C=1 /AO=1" $0 ; turns on slow log
+    ${Else}
+      ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "log-bin" "# log-bin" "/S=1 /C=1 /AO=1" $0 ; turns on slow log
     ${EndIf}    
     
     DetailPrint "Instauj MySQL Server jako serwis..."
