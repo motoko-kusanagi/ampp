@@ -21,7 +21,6 @@ Because the `zip` and `msi` files are not included you have to download them man
 * [PHP] (http://windows.php.net/download/) (only 'thread safe' version is working with apache2!)
 * [phpMyAdmin] (http://www.phpmyadmin.net/home_page/downloads.php)
 
-
 Keep in mind that if version of your Apache2, MySQL, PHP or phpMyAdmin is different you have to edit one or all of those lines:
 * `File "inst-files\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi"`
 * `File "inst-files\php-5.3.28-Win32-VC9-x86.msi"`
