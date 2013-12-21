@@ -29,3 +29,7 @@ Keep in mind that if version of your Apache2, MySQL, PHP or phpMyAdmin is differ
 * `File "inst-files\dotNetFx40_Full_x86_x64.exe"`
 
 To compile this script you have to download [NSIS] (http://nsis.sourceforge.net/Download). After installation copy all files from `nsis-include` into your `NSIS\Include` directory.
+
+Author
+======
+Marcin Szymkowski / https://github.com/motoko-kusanagi
