@@ -25,7 +25,7 @@
   !include "Registry.nsh"
   !include "FileFunc.nsh"
   !include "Sections.nsh"
-  !include "logiclib.nsh"
+  !include "LogicLib.nsh"
   !include "nsDialogs.nsh"
   !include "StrFunc.nsh"
   !include "TextReplace.nsh"
