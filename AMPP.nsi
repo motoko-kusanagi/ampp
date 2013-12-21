@@ -95,8 +95,24 @@
   Function .onVerifyInstDir
   FunctionEnd
   
-  ;Function add_remove ;
-;  FunctionEnd
+  Function add_remove
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\AMPP" \ 
+                     "DisplayName" "AMPP - Apache2, MySQL, PHP, phpMyAdmin"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\AMPP" \ 
+                     "DisplayIcon" "$INSTDIR\un-ampp.exe"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\AMPP" \ 
+                     "Publisher" ""
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\AMPP" \ 
+                     "HelpLink" "https://github.com/motoko-kusanagi/ampp"                 
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\AMPP" \ 
+                     "URLInfoAbout" "https://github.com/motoko-kusanagi/ampp/blob/master/README.md"                 
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\AMPP" \ 
+                     "HelpTelephone" ""        
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\AMPP" \ 
+                     "DisplayVersion" "1.0"                     
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\AMPP" \ 
+                     "UninstallString" "$\"$INSTDIR\un-ampp.exe$\""
+  FunctionEnd
 
   Section "Express" section_one
   SectionEnd
@@ -115,12 +131,13 @@
     call dotnet_install
     call mysql_install
 
+    call add_remove
+
     ; start memnu shortcuts
     CreateDirectory "$SMPROGRAMS\AMPP"
     CreateShortCut "$SMPROGRAMS\AMPP\PHP.ini.lnk" "$INSTDIR\PHP\php.ini" "" ""
     CreateShortCut "$SMPROGRAMS\AMPP\MySQL.ini.lnk" "$INSTDIR\MySQL\my.ini" "" ""
     CreateShortCut "$SMPROGRAMS\AMPP\Uninstaller.lnk" "$INSTDIR\un-ampp.exe" "" ""    
-
 
     WriteUninstaller "$INSTDIR\un-ampp.exe"
   SectionEnd
