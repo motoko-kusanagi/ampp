@@ -7,7 +7,7 @@ AMPP is an script written in NSIS (Nullsoft Scriptable Install System - http://n
 It can be used to create easy to install HTTP server with PHP and MySQL extensions.
 To handle MySQL administration phpMyAdmin package is also included.
 
-AMPP script is based on:
+AMPP script was created with:
 * Apache2 2.2.25 (msi)
 * MySQL 5.6.15 (zip)
 * PHP 5.3.28 (msi)
