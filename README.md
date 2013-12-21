@@ -27,5 +27,4 @@ You have to put all downloaded files inside 'inst-files' folder. For MySQL datab
 
 Author
 ======
-Marcin Szymkowski
-https://github.com/motoko-kusanagi
+Marcin Szymkowski :: https://github.com/motoko-kusanagi
