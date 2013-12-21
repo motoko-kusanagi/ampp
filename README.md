@@ -4,9 +4,9 @@ AMPP
 AMPP - Apache2, MySQL, PHP, phpMyAdmin.
 
 AMPP is an script written in NSIS (Nullsoft Scriptable Install System - http://nsis.sourceforge.net/).
-It can be used to create easy to install HTTP server with PHP and MySQL extensions. To handle MySQL administration phpMyAdmin package is included as well.
+It can be used to create easy to install HTTP server with PHP and MySQL extensions. To handle MySQL administration phpMyAdmin package is also included.
 
-This AMPP script is based on:
+AMPP script is based on:
 * Apache2 2.2.25 (msi)
 * MySQL 5.6.15 (zip)
 * PHP 5.3.28 (msi)
@@ -15,7 +15,7 @@ This AMPP script is based on:
 How-To
 ======
 
-Because non of instalation files are not included you have to manualy download them.
+Because the 'zip' and 'msi' files are not included you have to download them manualy.
 * Apache2 - http://httpd.apache.org/download.cgi
 * MySQL - http://dev.mysql.com/downloads/mysql/
 * PHP - http://windows.php.net/download/ (keep in mind that only 'thread safe' version is working with apache2!)
