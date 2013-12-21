@@ -107,7 +107,7 @@
   Section "" main ; default section
     SetShellVarContext all
 
-    CreateDirectory "$INSTDIR\Log"    
+    CreateDirectory "$INSTDIR\Logs"    
     call apache_install
     call php_install
     call phpmyadmin_install
@@ -116,11 +116,6 @@
     call mysql_install
 
     WriteUninstaller "$INSTDIR\un-ampp.exe"
-    
-    StrCpy $mysql_passwdfile "$TEMP\ampp\passwd.sql"
-    ExecWait '"cmd.exe" /C "$INSTDIR\MySQL\bin\mysql.exe" -uroot < $mysql_passwdfile' $0 ; changes root password
-    MessageBox MB_OK $0
-          
   SectionEnd
  
   Function .onSelChange
@@ -164,7 +159,7 @@
     SetOutPath "$TEMP\ampp\"
     File "inst-files\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi"
     DetailPrint "Install Apache HTTP Server..."
-    ExecWait 'msiexec /i "$TEMP\ampp\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi" /qb! INSTALLDIR="$INSTDIR\Apache2" SERVERNAME=$apache_server_name SERVERADMIN="$apache_admin_email" ALLUSERS=1 RebootYesNo=No /L*V "$INSTDIR\Log\apache2.log"'
+    ExecWait 'msiexec /i "$TEMP\ampp\httpd-2.2.25-win32-x86-openssl-0.9.8y.msi" /qb! INSTALLDIR="$INSTDIR\Apache2" SERVERNAME=$apache_server_name SERVERADMIN="$apache_admin_email" ALLUSERS=1 RebootYesNo=No /L*V "$INSTDIR\Logs\apache2.log"'
     
     DetailPrint "Configure apache HTTP Server..."
     ${textreplace::ReplaceInFile} "$INSTDIR\apache2\conf\httpd.conf" "$INSTDIR\apache2\conf\httpd.conf" "htdocs" "www-root" "/S=1 /C=1 /AO=1" $0
@@ -179,7 +174,7 @@
     SetOutPath "$TEMP\ampp\"
     File "inst-files\php-5.3.28-Win32-VC9-x86.msi"
     DetailPrint "Install PHP..."
-    ExecWait 'msiexec /i "$TEMP\ampp\php-5.3.28-Win32-VC9-x86.msi" /qb! INSTALLDIR="$INSTDIR\PHP" apacheDIR="$INSTDIR\apache2\conf" ADDLOCAL="ScriptExecutable,cgi,apache22,ext_php_mysqli,ext_php_mysql,ext_php_mbstring" /L*V "$INSTDIR\Log\php.log"'
+    ExecWait 'msiexec /i "$TEMP\ampp\php-5.3.28-Win32-VC9-x86.msi" /qb! INSTALLDIR="$INSTDIR\PHP" apacheDIR="$INSTDIR\apache2\conf" ADDLOCAL="ScriptExecutable,cgi,apache22,ext_php_mysqli,ext_php_mysql,ext_php_mbstring" /L*V "$INSTDIR\Logs\php.log"'
 
     DetailPrint "Restart Apache HTTP Server..."
     ExecWait '"$INSTDIR\apache2\bin\httpd.exe" -k restart'
@@ -259,11 +254,17 @@
       ${textreplace::ReplaceInFile} "$INSTDIR\MySQL\my.ini" "$INSTDIR\MySQL\my.ini" "log-bin" "# log-bin" "/S=1 /C=1 /AO=1" $0 ; turns on slow log
     ${EndIf}    
     
+    FileOpen $4 "$INSTDIR\MySQL\service.info" w
+    FileWrite $4 "$mysql_service_name"
+    FileClose $4
+    
     DetailPrint "Instauj MySQL Server jako serwis..."
     ExecWait '"$INSTDIR\MySQL\bin\mysqld.exe" --install $mysql_service_name' ; mysql as a service
     
     DetailPrint "Run service $mysql_service_name..."
-    ExecWait '"net" start mysql' ; starts mysql service
+    ExecWait '"net" start $mysql_service_name' ; starts mysql service
+    
+    
     
     SetOutPath "$TEMP\ampp"
     File "mysql-conf\passwd.sql"
@@ -441,11 +442,22 @@
     ExecCmd::exec 'msiexec /X{F1294EED-6F8E-4C87-B34A-AB045356531D} /norestart /qb! ALLUSERS=1 REMOVE="ALL" >ExecCmd.log'
     
     ; mysql
-    DetailPrint "Stop MySQL service..."
-    ExecWait '"net" stop MySQL56'
-    DetailPrint "Remove MySQL service..."
-    ExecWait '"MySQL\bin\mysqld.exe" --remove MySQL56'
+    FileOpen $4 "$INSTDIR\MySQL\service.info" r
+    FileRead $4 $1
+    StrCpy $mysql_service_name $1
+    FileClose $4
+    MessageBox MB_OK $mysql_service_name
     
+    DetailPrint "Stop MySQL service..."
+    ExecWait '"net" stop $mysql_service_name'
+    DetailPrint "Remove MySQL service..."
+    ExecWait '"MySQL\bin\mysqld.exe" --remove $mysql_service_name'
+    
+    RMDir /r "PHP"
+    RMDir /r "Apache2"
+    ;RMDir /r "MySQL"
+    RMDir /r "Logs"
+    Delete "un-ampp.exe"
     
    SectionEnd
    
