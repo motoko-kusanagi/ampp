@@ -15,9 +15,9 @@ AMPP script is based on:
 How-To
 ======
 
-Because the 'zip' and 'msi' files are not included you have to download them manualy and put them inside **inst-files** folder.
+Because the `zip` and `msi` files are not included you have to download them manualy and put them inside `inst-files` folder.
 * [Apache2] (http://httpd.apache.org/download.cgi)
-* [MySQL] (http://dev.mysql.com/downloads/mysql/) (for MySQL database you will have download [Microsoft .NET Framework 4.0] (http://www.microsoft.com/en-us/download/details.aspx?id=17718) and put it inside "inst-files" folder as well)
+* [MySQL] (http://dev.mysql.com/downloads/mysql/) (for MySQL database you will have download [Microsoft .NET Framework 4.0] (http://www.microsoft.com/en-us/download/details.aspx?id=17718) and put it inside `inst-files` folder as well)
 * [PHP] (http://windows.php.net/download/) (only 'thread safe' version is working with apache2!)
 * [phpMyAdmin] (http://www.phpmyadmin.net/home_page/downloads.php)
 
@@ -29,4 +29,4 @@ Keep in mind that if version of your Apache2, MySQL, PHP or phpMyAdmin is differ
 * `File "inst-files\mysql-5.6.15-win32.zip"`
 * `File "inst-files\dotNetFx40_Full_x86_x64.exe"`
 
-To compile this script you have to download [NSIS] (http://nsis.sourceforge.net/Download). After installation copy all files from **nsis-include** into your **NSIS\Include** directory.
+To compile this script you have to download [NSIS] (http://nsis.sourceforge.net/Download). After installation copy all files from `nsis-include` into your `NSIS\Include` directory.
