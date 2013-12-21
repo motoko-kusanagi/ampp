@@ -115,6 +115,13 @@
     call dotnet_install
     call mysql_install
 
+    ; start memnu shortcuts
+    CreateDirectory "$SMPROGRAMS\AMPP"
+    CreateShortCut "$SMPROGRAMS\AMPP\PHP.ini.lnk" "$INSTDIR\PHP\php.ini" "" ""
+    CreateShortCut "$SMPROGRAMS\AMPP\MySQL.ini.lnk" "$INSTDIR\MySQL\my.ini" "" ""
+    CreateShortCut "$SMPROGRAMS\AMPP\Uninstaller.lnk" "$INSTDIR\un-ampp.exe" "" ""    
+
+
     WriteUninstaller "$INSTDIR\un-ampp.exe"
   SectionEnd
  
@@ -452,6 +459,12 @@
     ExecWait '"net" stop $mysql_service_name'
     DetailPrint "Remove MySQL service..."
     ExecWait '"MySQL\bin\mysqld.exe" --remove $mysql_service_name'
+    
+    ; start menu shortcuts
+    Delete "$SMPROGRAMS\AMPP\php.ini"
+    Delete "$SMPROGRAMS\AMPP\my.ini"
+    Delete "$SMPROGRAMS\AMPP\un-ampp.exe"  
+    RMDIR /r "$SMPROGRAMS\AMPP"
     
     RMDir /r "PHP"
     RMDir /r "Apache2"
