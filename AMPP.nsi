@@ -21,7 +21,6 @@
   RequestExecutionLevel admin
 
 ; includes
-
   !include "Registry.nsh"
   !include "FileFunc.nsh"
   !include "Sections.nsh"
@@ -37,7 +36,6 @@
     
 ;--------------------------------
 ; pages
-  
   page license
   page components
   page directory
@@ -130,7 +128,6 @@
     call create_www
     call dotnet_install
     call mysql_install
-
     call add_remove
 
     ; start memnu shortcuts
@@ -288,8 +285,6 @@
     DetailPrint "Run service $mysql_service_name..."
     ExecWait '"net" start $mysql_service_name' ; starts mysql service
     
-    
-    
     SetOutPath "$TEMP\ampp"
     File "mysql-conf\passwd.sql"
     ${textreplace::ReplaceInFile} "$TEMP\ampp\passwd.sql" "$TEMP\ampp\passwd.sql" "my-new-password" "$mysql_passwd" "/S=1 /C=1 /AO=1" $0 ; replaces my-new-password with specific user password
@@ -297,9 +292,9 @@
     sleep 6000
     StrCpy $mysql_passwdfile "$TEMP\ampp\passwd.sql"
     ExecWait '"cmd.exe" /C "$INSTDIR\MySQL\bin\mysql.exe" -uroot < $mysql_passwdfile' $0 ; changes root password
-    MessageBox MB_OK $0
+    ; MessageBox MB_OK $0
     
-    ;Delete "$TEMP\ampp\passwd.sql"
+    Delete "$TEMP\ampp\passwd.sql"
     Delete "$TEMP\ampp\mysql-5.6.15-win32.zip"
   FunctionEnd
   
@@ -470,7 +465,6 @@
     FileRead $4 $1
     StrCpy $mysql_service_name $1
     FileClose $4
-    MessageBox MB_OK $mysql_service_name
     
     DetailPrint "Stop MySQL service..."
     ExecWait '"net" stop $mysql_service_name'
@@ -483,12 +477,12 @@
     Delete "$SMPROGRAMS\AMPP\un-ampp.exe"  
     RMDIR /r "$SMPROGRAMS\AMPP"
     
-    RMDir /r "PHP"
-    RMDir /r "Apache2"
-    ;RMDir /r "MySQL"
-    RMDir /r "Logs"
-    Delete "un-ampp.exe"
+    RMDir /r "$INSTDIR\PHP"
+    RMDir /r "$INSTDIR\Apache2"
+    RMDir /r "$INSTDIR\MySQL"
+    RMDir /r "$INSTDIR\Logs"
     
+    Delete "$INSTDIR\un-ampp.exe"
    SectionEnd
    
   Function un.onInit ; uninstaller init
