@@ -32,4 +32,4 @@ To compile this script you have to download [NSIS] (http://nsis.sourceforge.net/
 
 Author
 ======
-Marcin Szymkowski / https://github.com/motoko-kusanagi
+https://github.com/motoko-kusanagi
